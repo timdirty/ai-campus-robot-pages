@@ -1,0 +1,10 @@
+{
+  "projectId": "local-demo-placeholder",
+  "appId": "1:000000000000:web:local-demo-placeholder",
+  "apiKey": "demo-api-key-not-used",
+  "authDomain": "local-demo-placeholder.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "local-demo-placeholder.appspot.com",
+  "messagingSenderId": "000000000000",
+  "measurementId": ""
+}

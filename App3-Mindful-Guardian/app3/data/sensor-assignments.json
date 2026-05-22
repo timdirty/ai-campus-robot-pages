@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "assignments": [
+    {
+      "portPath": "COM18",
+      "zoneId": "zone-hall",
+      "deviceKey": "pnp:usb\\vid_2341&pid_0069&mi_00\\6&990027&0&0000",
+      "assignedAt": "2026-05-22T06:38:26.429Z"
+    },
+    {
+      "portPath": "COM19",
+      "zoneId": "zone-field",
+      "deviceKey": "pnp:usb\\vid_2341&pid_0069&mi_00\\6&bf16668&0&0000",
+      "assignedAt": "2026-05-22T06:38:26.429Z"
+    },
+    {
+      "portPath": "COM3",
+      "zoneId": "zone-library",
+      "deviceKey": "pnp:usb\\vid_2341&pid_1002&mi_01\\6&1e771b82&0&0001",
+      "assignedAt": "2026-05-22T06:38:26.429Z"
+    }
+  ]
+}

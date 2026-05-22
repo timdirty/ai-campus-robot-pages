@@ -1,0 +1,324 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #3b82f6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+html,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Custom Scrollbar for better polish */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.markdown-body h1 { @apply text-2xl font-bold mb-4; }
+.markdown-body p { @apply mb-2; }
+
+.robot-marker {
+  transition:
+    left 480ms ease,
+    top 480ms ease,
+    transform 220ms ease;
+}
+
+.robot-route-line {
+  background: linear-gradient(90deg, rgb(13 148 136 / 0), rgb(20 184 166 / 0.76), rgb(45 212 191 / 0));
+  box-shadow: 0 0 20px rgb(20 184 166 / 0.36);
+  transition:
+    width 520ms ease,
+    transform 520ms ease,
+    opacity 220ms ease;
+}
+
+.robot-marker-active {
+  animation: robot-confirm 760ms ease-in-out infinite alternate;
+}
+
+.robot-marker-active > span {
+  animation: robot-wave 1.2s ease-out infinite;
+}
+
+.zone-dispatch-pulse {
+  animation: zone-confirm 1.1s ease-in-out infinite alternate;
+}
+
+.mission-live {
+  overflow: hidden;
+}
+
+.mission-live::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgb(45 212 191 / 0.18) 42%, transparent 76%);
+  transform: translateX(-100%);
+  animation: mission-scan 1.4s ease-in-out infinite;
+}
+
+.audio-bar {
+  animation: audio-meter 980ms ease-in-out infinite alternate;
+}
+
+@keyframes robot-confirm {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 20px 42px rgb(20 184 166 / 0.26);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 0 24px 56px rgb(20 184 166 / 0.44);
+  }
+}
+
+@keyframes robot-wave {
+  from {
+    opacity: 0.8;
+    transform: scale(0.62);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes zone-confirm {
+  from {
+    box-shadow: 0 12px 24px rgb(15 118 110 / 0.12);
+  }
+  to {
+    box-shadow: 0 18px 34px rgb(15 118 110 / 0.28);
+  }
+}
+
+@keyframes audio-meter {
+  from {
+    transform: scaleY(0.72);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+@keyframes mission-scan {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+button,
+[role="button"],
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+@media (min-width: 1024px) {
+  .app3-work-drawer {
+    height: calc(100vh - 5rem);
+  }
+
+  .app3-work-body,
+  .app3-alerts-panel,
+  .app3-sensing-panel,
+  .app3-care-panel {
+    min-height: 0;
+  }
+
+  .app3-alerts-panel,
+  .app3-sensing-panel,
+  .app3-care-panel {
+    height: 100%;
+    align-items: stretch;
+  }
+
+  .app3-alerts-panel > section,
+  .app3-sensing-panel > .app3-work-card,
+  .app3-care-panel > .app3-work-card {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app3-work-card {
+    padding: 0.875rem !important;
+  }
+
+  .app3-work-card h3 {
+    font-size: 1rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  .app3-loop-context {
+    margin-top: 0.5rem !important;
+    padding-block: 0.55rem !important;
+  }
+
+  .app3-loop-outcome {
+    display: none;
+  }
+
+  .app3-alert-rhythm {
+    padding: 0.75rem !important;
+  }
+
+  .app3-alert-rhythm p:last-child {
+    display: none;
+  }
+
+  .app3-alert-list {
+    max-height: 100%;
+  }
+
+  .app3-alert-detail {
+    min-height: 0 !important;
+    overflow: auto;
+  }
+
+  .app3-acoustic-meter {
+    margin-top: 0.5rem !important;
+  }
+
+  .app3-acoustic-meter .relative.mx-auto.h-32 {
+    height: 6.75rem !important;
+  }
+
+  .app3-acoustic-meter .flex.h-24 {
+    height: 4.75rem !important;
+  }
+
+  .app3-visual-preview .relative.aspect-video {
+    aspect-ratio: 16 / 8.5;
+  }
+
+  .app3-care-chat {
+    height: min(18rem, 38vh) !important;
+    min-height: 14rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+  .app3-work-drawer {
+    top: 0.75rem !important;
+    bottom: 0.75rem !important;
+    height: calc(100vh - 1.5rem);
+    padding: 0.75rem !important;
+  }
+
+  .app3-work-header {
+    padding-bottom: 0.5rem !important;
+  }
+
+  .app3-work-header h2 {
+    font-size: 1.125rem !important;
+    line-height: 1.35rem !important;
+  }
+
+  .app3-work-header p:last-child {
+    display: none;
+  }
+
+  .app3-work-body {
+    padding-block: 0.5rem !important;
+  }
+
+  .app3-work-card {
+    padding: 0.7rem !important;
+  }
+
+  .app3-work-card p,
+  .app3-work-card button,
+  .app3-work-card input,
+  .app3-work-card textarea {
+    font-size: 0.75rem;
+  }
+
+  .app3-mood-button {
+    min-height: 4.75rem !important;
+    padding: 0.625rem !important;
+  }
+
+  .app3-emotion-textarea {
+    min-height: 4.75rem !important;
+  }
+
+  .app3-emotion-result p:nth-child(n+3) {
+    display: none;
+  }
+
+  .app3-care-chat {
+    height: min(15.5rem, 34vh) !important;
+    min-height: 12rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .guardian-shell,
+  .guardian-shell * {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .guardian-shell nav > div {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    max-width: 100vw !important;
+  }
+
+  .guardian-shell [class*="rounded-4xl"],
+  .guardian-shell [class*="rounded-[2rem]"],
+  .guardian-shell [class*="rounded-[2.5rem]"],
+  .guardian-shell [class*="rounded-[3rem]"] {
+    border-radius: 1.25rem !important;
+  }
+
+  .guardian-shell [class*="p-6"] {
+    padding: 1rem !important;
+  }
+
+  .guardian-shell h2,
+  .guardian-shell h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .guardian-shell .campus-zone-card {
+    transform: translateX(-8%);
+  }
+
+  .guardian-shell .campus-zone-card:nth-of-type(4),
+  .guardian-shell .campus-zone-card:nth-of-type(5) {
+    transform: translateX(-24%);
+  }
+}

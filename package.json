@@ -1,0 +1,12 @@
+{
+  "name": "ai-campus-robot-pages",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "pages:build": "node scripts/build-github-pages.mjs",
+    "pages:verify": "node scripts/verify-github-pages.mjs",
+    "pages:check": "npm run pages:build && npm run pages:verify",
+    "demo:stress": "node scripts/verify-demo-stress.mjs --rounds=100"
+  }
+}

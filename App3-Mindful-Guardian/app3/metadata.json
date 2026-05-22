@@ -1,0 +1,6 @@
+{
+  "name": "Mindful Guardian 校園心靈守護者",
+  "description": "全方位校園情感健康監測與支援平台。結合即時數據分析、預警中心及學生自我照護功能。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["情感監測", "即時佈署", "壓力緩解", "師生互動"]
+}

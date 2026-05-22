@@ -1,0 +1,648 @@
+import { AppState, StudentReport, DispatchTaskType } from '../state/appState';
+import { askGemini } from './geminiAi';
+
+// ---------------------------------------------------------------------------
+// Teacher reply fallback templates
+// ---------------------------------------------------------------------------
+
+type SituationType = 'confused' | 'quiz_request' | 'group_work' | 'review' | 'general';
+
+const CONFUSED_KEYWORDS = /不懂|不會|為什麼|怎麼|不理解|搞不清楚/;
+const QUIZ_KEYWORDS = /考|測驗|練習|題目|複習/;
+const GROUP_KEYWORDS = /分組|合作|討論|一起/;
+const REVIEW_KEYWORDS = /複習|重點|整理|總結/;
+
+function detectSituation(question: string): SituationType {
+  if (CONFUSED_KEYWORDS.test(question)) return 'confused';
+  if (QUIZ_KEYWORDS.test(question)) return 'quiz_request';
+  if (GROUP_KEYWORDS.test(question)) return 'group_work';
+  if (REVIEW_KEYWORDS.test(question)) return 'review';
+  return 'general';
+}
+
+type SubjectKey = '數學' | '語文' | '自然' | '社會' | '英語' | '體育' | '藝術' | '通用';
+
+const SUBJECT_KEYWORDS: Array<[SubjectKey, RegExp]> = [
+  ['數學', /數學|加法|減法|乘法|除法|分數|幾何|公式|方程/],
+  ['語文', /語文|作文|閱讀|字詞|造句|文章|段落|國語/],
+  ['自然', /自然|科學|動物|植物|實驗|物理|化學|生物|天氣/],
+  ['社會', /社會|歷史|地理|公民|文化|古代|朝代|事件|達文西|文藝復興/],
+  ['英語', /英語|英文|英文字|grammar|文法|單字|vocabulary/i],
+  ['體育', /體育|運動|球|跑步|游泳|動作|姿勢|比賽/],
+  ['藝術', /藝術|美術|音樂|畫|繪畫|設計|作品|旋律/],
+];
+
+function detectSubject(question: string): SubjectKey {
+  for (const [subject, pattern] of SUBJECT_KEYWORDS) {
+    if (pattern.test(question)) return subject;
+  }
+  return '通用';
+}
+
+const TEACHER_TEMPLATES: Record<SubjectKey, Record<SituationType, string[]>> = {
+  數學: {
+    confused: [
+      '這道題目的關鍵是先找出已知條件，然後用公式代入計算。我們一步一步來，你先告訴我你理解到哪一步了？',
+      '數學不難，只要找對方法！建議你先把題目畫圖，把數字標出來，這樣更容易看出解題方向。',
+      '遇到不懂的數學問題，先把題目讀兩遍，把已知的資料圈起來，再想想要求什麼——通常方向就清楚了。',
+      '這個概念可以用生活中的例子來理解，比如買東西找零錢，就是減法的應用。你試著想一個生活場景！',
+      '不要怕錯，先把你的想法寫出來，我們看看哪個步驟出了問題，找到關鍵就能突破。',
+    ],
+    quiz_request: [
+      '好的，我來出幾題練習！記得先想清楚再動筆，每道題做完後檢查一次。',
+      '複習的時候先從基本公式開始確認，再做練習題。你想從哪個單元開始？',
+      '練習前先確認公式和概念都記熟，這樣做題才有效率！',
+    ],
+    group_work: [
+      '分組討論時，建議先讓每個人說說自己的解法，再比較看看哪個最簡單。',
+      '合作解題很好！可以分工，一個人負責計算，一個人負責驗算，效率更高。',
+      '小組討論時，如果有人算法不同，要互相解釋原因，找出最正確的思路。',
+    ],
+    review: [
+      '複習數學時，建議整理每個單元的公式和例題，考前一天再快速瀏覽一遍。',
+      '重點複習：先看錯題本，再做幾道類似的題目確認已經掌握了。',
+      '數學複習要動手做題，光看筆記不夠——每個公式至少要親自算一遍。',
+    ],
+    general: [
+      '收到你的數學問題！我來幫你分析解題步驟，先把題目拆成幾個小部分來看。',
+      '數學學好的關鍵是不放棄，每個難題都有解法，讓我們一起找出來。',
+      '這個數學問題很有意思，我先幫你整理一下思路，再一起解題。',
+    ],
+  },
+  語文: {
+    confused: [
+      '閱讀理解的技巧是先看題目問什麼，再回到文章找對應段落。讓我幫你分析一下這篇文章的結構。',
+      '寫作文時，先想好中心主旨，再分段寫：開頭吸引人，中間有細節，結尾有感想。',
+      '字詞不懂沒關係，先看前後句的意思猜猜看，再查字典確認——這樣記憶更深刻。',
+      '文章段落之間有邏輯關係，找出「因此」「但是」「所以」這類連接詞，就能理解作者的思路。',
+      '不確定這個字怎麼用？先觀察它在句子中的位置（主語、動詞還是形容詞），就能判斷用法。',
+    ],
+    quiz_request: [
+      '語文練習建議從課文中選詞造句，再練習閱讀理解的技巧。',
+      '想要加強語文，可以多讀課外讀物，邊讀邊記下好詞好句。',
+      '語文測驗前，先把課文重要段落背熟，再練習分析題型。',
+    ],
+    group_work: [
+      '分組討論文章時，每個人先說說自己讀到的重點，再整合出共同的看法。',
+      '合作寫作時，可以分工：一個人寫草稿，另一個人修改，最後大家一起確認。',
+      '討論時大膽說出自己的理解，不同的解讀可以讓大家更全面地了解文章。',
+    ],
+    review: [
+      '語文複習的重點是課文生字、詞語解釋和文章大意，把這三樣整理清楚就掌握了大半。',
+      '複習時可以把課文讀一遍，注意每段的主題句，這樣就能快速回憶文章內容。',
+      '語文重點整理：生字、佳句、段落大意，整理成筆記之後考前複習特別有效。',
+    ],
+    general: [
+      '收到你的語文問題！語文需要慢慢累積，每天多讀一點就會有進步。',
+      '語文能力的提升需要時間，閱讀和寫作都很重要，我來幫你分析這個問題。',
+      '好問題！語文學習最重要的是理解，我幫你把這個概念解釋清楚。',
+    ],
+  },
+  自然: {
+    confused: [
+      '科學的觀察很重要！這個現象背後有個原理——讓我用生活中的例子來解釋給你聽。',
+      '自然科學的概念可以動手做實驗來驗證，你有沒有在生活中觀察到類似的現象？',
+      '這個科學原理初看複雜，但只要掌握關鍵詞——讓我幫你把概念拆解成幾個簡單步驟。',
+      '科學問題要先問「為什麼」，再問「怎麼發生的」，最後問「有什麼影響」，這樣思考就清楚了。',
+      '不確定沒關係，科學就是從不確定中找答案！我們先列出可能的原因，再一個個驗證。',
+    ],
+    quiz_request: [
+      '自然科學測驗前，把課本中的實驗步驟和結論整理成筆記，特別有效。',
+      '練習時多想「如果……那麼……」的實驗邏輯，這樣面對新題型也不怕。',
+      '複習自然時，先確認每個單元的核心概念，再看相關的生活應用例子。',
+    ],
+    group_work: [
+      '自然科學分組討論很棒！可以分工：一個人提假設，另一個人查資料驗證。',
+      '合作做實驗時，每個人都要記錄觀察到的現象，最後比較結果找出規律。',
+      '科學討論鼓勵不同意見，多個假設同時比較，往往能找到更完整的答案。',
+    ],
+    review: [
+      '自然複習重點：每個單元的核心概念、重要實驗的步驟和結論。',
+      '整理自然筆記時，用「現象→原因→影響」的架構，知識更容易記住。',
+      '複習時把學過的概念和生活中的例子對應起來，加深理解和記憶。',
+    ],
+    general: [
+      '收到你的自然問題！科學很有趣，讓我幫你用生活例子解釋這個現象。',
+      '自然科學的學習就是觀察和思考，你的問題很好，我來幫你分析。',
+      '好奇心是科學的起點！這個問題讓我們一起探索答案。',
+    ],
+  },
+  社會: {
+    confused: [
+      '歷史事件要記的不只是時間，更重要的是「為什麼」。這件事發生的原因和影響，讓我們一起整理。',
+      '社會科的內容很廣，我建議用「時間軸」或「心智圖」來整理知識，這樣連結更清楚。',
+      '地理概念可以對照地圖來理解，看到地名就在腦中定位，記憶效果更好。',
+      '公民課的觀念和生活很有關係，試著把課本內容連結到你每天看到的社會現象。',
+      '文藝復興三傑是達文西、米開朗基羅與拉斐爾。你可以先記「畫作、雕塑、聖母像」三個關鍵線索。',
+    ],
+    quiz_request: [
+      '社會科測驗前，先整理重要事件的「時間、人物、地點、影響」四個要素。',
+      '地理要素複習：氣候、地形、人口、產業，這四個方向覆蓋大部分考題。',
+      '歷史練習時多問「為什麼」而不只是「什麼時候」，理解比死記更有效。',
+    ],
+    group_work: [
+      '社會科分組討論，可以讓每個人負責一個時期或區域，再拼湊成完整的知識圖。',
+      '合作研究社會議題時，建議蒐集不同觀點，這樣討論更豐富。',
+      '小組討論歷史時，嘗試站在不同角色的立場思考，會有新的理解。',
+    ],
+    review: [
+      '社會複習重點：重要事件的脈絡、地理的區域特色、公民的基本概念。',
+      '整理歷史筆記時，依照朝代或時期分類，讓知識有系統、好回顧。',
+      '地理複習時，把地圖和文字說明對應起來，加深印象。',
+    ],
+    general: [
+      '社會科的學習關鍵是理解脈絡，我來幫你把這個問題放回大背景來分析。',
+      '收到你的社會問題！讓我幫你連結課本知識和生活實際情境。',
+      '這是個很好的社會科問題，我幫你整理相關的重點。',
+    ],
+  },
+  英語: {
+    confused: [
+      'Grammar rules can be tricky! 讓我用中文解釋這個文法規則，然後我們用例句練習。',
+      '英文單字記不住？試試用聯想法：把新單字和你已知的中文或英文字串連起來。',
+      '英文文法不確定時，先看例句，從例句中找規律，比看文法表格更有效。',
+      '閱讀英文文章時遇到不認識的字，先試著從前後文猜意思，培養語感很重要。',
+      '英文聽說讀寫都需要練習，但基礎從「多讀多聽」開始，慢慢就會越來越自然。',
+    ],
+    quiz_request: [
+      '英語測驗前，把生字、片語和常用句型整理一遍，重點背誦最有效。',
+      '練習英文寫作時，先列出要說的重點，再用簡單的句型表達，不要怕錯。',
+      '英語複習從「能聽、能讀、能寫」三個面向分別確認，找出最弱的地方加強。',
+    ],
+    group_work: [
+      '英語分組活動時，鼓勵大家多開口說，不要怕發音不完美，多練才會進步。',
+      '合作完成英語作業時，每個人先寫出自己的版本，再合併修改，互相學習。',
+      '英文討論時用簡單的英文或中英混合都可以，重點是把想法表達清楚。',
+    ],
+    review: [
+      '英語複習重點：本課生字、關鍵文法點、課文理解，三項都確認後就很紮實。',
+      '整理英語筆記時，把例句和文法規則放在一起，對照看最清楚。',
+      '複習英語最好的方式是大聲朗讀課文，同時加深聽覺和視覺記憶。',
+    ],
+    general: [
+      'Great question! 英語學習需要每天接觸，多聽多說多讀，進步會很快。',
+      '收到你的英語問題！讓我用清楚的方式解釋這個英文概念。',
+      'Learning English takes time but it\'s worth it! 我來幫你分析這個問題。',
+    ],
+  },
+  體育: {
+    confused: [
+      '動作要領需要多練習！先把動作分解成小步驟，一個一個確認後再連起來做。',
+      '體育動作學不起來，可以先慢慢做，確認每個關節的位置對了，再逐漸加速。',
+      '運動技能需要重複練習，短時間內多次練習比長時間一次練習效果更好。',
+      '不確定動作對不對？可以對著鏡子練習，或是請同學幫你觀察動作。',
+      '體育學習要有耐心，每個人的學習速度不同，只要持續練習一定會進步的。',
+    ],
+    quiz_request: [
+      '體育規則和技巧的測驗，先把基本規則讀熟，再記特殊情況的處理方式。',
+      '體育筆記可以用圖解來整理動作要領，這樣更直觀。',
+      '準備體育相關考試時，把課本中的運動規則和安全注意事項重點標記。',
+    ],
+    group_work: [
+      '體育分組活動時，注意互相觀察和給予正面的鼓勵，好的團隊氛圍讓大家都能進步。',
+      '合作練習時，可以輪流示範動作，讓大家都有機會練習和接收回饋。',
+      '小組體育活動要注意安全，互相提醒動作要點，一起進步。',
+    ],
+    review: [
+      '體育課重點複習：基本動作要領、規則要點、安全注意事項。',
+      '整理體育筆記時，用圖示搭配文字說明，記憶動作要領更有效。',
+      '複習體育規則時，想想實際比賽中的情境，幫助理解和記憶。',
+    ],
+    general: [
+      '體育鍛鍊對健康很重要！我來幫你了解這個運動技巧的重點。',
+      '收到你的體育問題！運動要注意安全，讓我幫你解釋正確的方式。',
+      '體育學習很有趣，技術和規則都需要理解，我來幫你說明。',
+    ],
+  },
+  藝術: {
+    confused: [
+      '創作沒有標準答案！先觀察作品想表達什麼情感，再思考用什麼技巧可以表達出來。',
+      '藝術創作可以從模仿開始，先學習大師的技法，再慢慢發展出自己的風格。',
+      '音樂不確定怎麼唱？先把旋律哼熟，再加上歌詞，一段一段練習效果最好。',
+      '美術作業不知道怎麼下筆？先用鉛筆打草稿，確認構圖後再上色或細化。',
+      '藝術欣賞的重點是感受，先說說這個作品讓你有什麼感覺，再分析技法和風格。',
+    ],
+    quiz_request: [
+      '藝術測驗前，把重要藝術家、作品和時期整理成筆記，配合圖片記憶效果更好。',
+      '音樂測驗記熟基本樂理和節拍，多聽課本中提到的樂曲。',
+      '美術理論複習重點：顏色理論、構圖原則、各時期藝術風格。',
+    ],
+    group_work: [
+      '藝術分組創作時，每個人先分享靈感，再討論如何整合成一個主題。',
+      '合作藝術作品時，分工要清楚，但也要保持整體風格的一致性。',
+      '小組欣賞藝術作品時，鼓勵每個人說出不同的感受，這樣理解更豐富。',
+    ],
+    review: [
+      '藝術複習重點：重要藝術家和作品、藝術技法、欣賞的角度和方法。',
+      '整理藝術筆記時，搭配圖片資料，幫助記憶作品和藝術家。',
+      '複習音樂時，把學過的樂曲哼一遍，加深旋律和拍子的記憶。',
+    ],
+    general: [
+      '藝術讓生活更豐富！我來幫你理解這個藝術概念或技巧。',
+      '收到你的藝術問題！創作和欣賞都是學習，讓我幫你探索這個主題。',
+      '藝術沒有對錯，重要的是表達。讓我幫你找到適合你的方式。',
+    ],
+  },
+  通用: {
+    confused: [
+      '我會用更小的步驟再說一次：先看關鍵詞，再看例子，最後用一句話整理成自己的理解。',
+      '不懂很正常，學習就是從不懂到懂的過程。讓我換個角度來解釋這個概念。',
+      '遇到不理解的地方，先把問題寫下來，再逐一找答案，這樣學習更有條理。',
+      '搞不清楚的地方最好多問，問清楚了理解才紮實。讓我幫你一步一步釐清。',
+      '這個概念有一點複雜，但只要抓住核心要點，其他的就容易理解了。',
+    ],
+    quiz_request: [
+      '收到你的練習需求！我來出幾道題目讓你測試一下理解程度。',
+      '複習的時候先從基礎確認，再挑戰難一點的題目，循序漸進效果最好。',
+      '練習前先確認基本概念都清楚，這樣做題才有效率。',
+    ],
+    group_work: [
+      '分組討論時，讓每個人都有機會發言，不同的想法讓學習更完整。',
+      '合作學習最重要的是互相尊重，即使意見不同，也要認真聆聽再討論。',
+      '小組合作時分工明確，但成果要大家一起確認，這樣品質更穩定。',
+    ],
+    review: [
+      '複習時先整理重點，再做練習題確認掌握程度，這樣效率最高。',
+      '整理筆記是複習的好方法，用自己的話寫下來，理解就更深了。',
+      '複習時不只看對的，更要分析錯的地方，找出弱點加強。',
+    ],
+    general: [
+      '收到你的問題，我會先把它標記起來，稍後用全班都能理解的例子補充說明。',
+      '好問題！讓我幫你分析這個問題的重點，找出最清楚的解答方式。',
+      '學習中有問題是很棒的事！讓我來幫你解答，一起把這個知識點弄清楚。',
+    ],
+  },
+};
+
+function pickTemplate(templates: string[]): string {
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+// ---------------------------------------------------------------------------
+// Dispatch recommendation fallback templates
+// ---------------------------------------------------------------------------
+
+type ZoneKey = '走廊' | '廁所' | '教室' | '操場' | '圖書館' | '餐廳' | '行政區' | '通用';
+type TaskKey = '清潔' | '巡邏' | '補給' | '維修' | '通用';
+
+const ZONE_KEYWORDS: Array<[ZoneKey, RegExp]> = [
+  ['走廊', /走廊|corridor/i],
+  ['廁所', /廁所|洗手間|toilet/i],
+  ['教室', /教室|classroom/i],
+  ['操場', /操場|運動場|playground/i],
+  ['圖書館', /圖書館|library/i],
+  ['餐廳', /餐廳|食堂|cafeteria/i],
+  ['行政區', /行政|辦公室|admin/i],
+];
+
+const TASK_KEYWORDS: Array<[TaskKey, RegExp]> = [
+  ['清潔', /清潔|清掃|打掃|clean/i],
+  ['巡邏', /巡邏|patrol|broadcast|疏導|廣播/i],
+  ['補給', /補給|補充|supply/i],
+  ['維修', /維修|修理|repair/i],
+];
+
+function detectZone(zone: string): ZoneKey {
+  for (const [key, pattern] of ZONE_KEYWORDS) {
+    if (pattern.test(zone)) return key;
+  }
+  return '通用';
+}
+
+function detectTask(taskType: string): TaskKey {
+  for (const [key, pattern] of TASK_KEYWORDS) {
+    if (pattern.test(taskType)) return key;
+  }
+  return '通用';
+}
+
+const DISPATCH_TEMPLATES: Record<ZoneKey, Record<TaskKey, string[]>> = {
+  走廊: {
+    清潔: [
+      '建議從走廊北端開始清掃，先清地面垃圾，再擦拭牆面，最後消毒把手。預計需要15分鐘。',
+      '走廊清潔程序：1) 清除地面紙屑，2) 拖地至乾燥，3) 確認緊急出口標示清晰可見。',
+    ],
+    巡邏: [
+      '請沿走廊兩側巡查，確認沒有遺留物品和安全隱患，並記錄人流狀況。',
+      '走廊巡邏重點：注意學生奔跑行為，確認所有門禁正常運作，預計10分鐘完成。',
+      '建議派遣校園服務機 R-01 前往走廊執行疏導廣播，引導人流有序移動，避免擁擠。',
+    ],
+    補給: [
+      '請確認走廊告示欄更新狀態，補充必要的宣傳資料和緊急聯絡資訊。',
+      '走廊補給任務：補充飲水機旁的衛生用品，確認濾芯狀態正常。',
+    ],
+    維修: [
+      '走廊設施檢查：確認照明設備正常、地板無破損、扶手穩固。發現問題立即標記並回報。',
+      '請檢查走廊緊急照明和廣播設備，記錄任何需要維修的項目。',
+    ],
+    通用: [
+      '建議派遣機器人前往走廊區域，執行全面的環境掃描和安全確認。',
+      '走廊任務已接收，機器人將進行例行檢查並回傳現場狀態。',
+    ],
+  },
+  廁所: {
+    清潔: [
+      '廁所清潔程序：1) 清潔馬桶和洗手台，2) 補充衛生紙和洗手液，3) 確認排水順暢，4) 噴灑除臭劑。',
+      '請確認廁所清潔頻率符合衛生標準，高峰時段建議增加清潔次數。',
+    ],
+    巡邏: [
+      '廁所巡查重點：確認供水正常、設施完整、無異常氣味，並記錄使用狀況。',
+      '請定時巡查廁所，確認環境整潔和設備正常運作。',
+    ],
+    補給: [
+      '廁所補給清單：衛生紙、洗手液、擦手紙，請逐一確認並補充不足的項目。',
+      '請確認各廁所的衛生用品存量充足，並預估需要補充的時間。',
+    ],
+    維修: [
+      '廁所設施檢查：水管、沖水系統、洗手台、照明，發現問題立即標記。',
+      '請檢查廁所是否有漏水或堵塞情況，及時回報需要維修的問題。',
+    ],
+    通用: [
+      '廁所區域任務已接收，機器人將完成標準程序並回報狀態。',
+      '建議派遣機器人前往廁所區域執行例行維護任務。',
+    ],
+  },
+  教室: {
+    清潔: [
+      '教室清潔流程：擦黑板/白板、清除桌椅垃圾、拖地、整理教具。課後清潔預計20分鐘。',
+      '建議課後立即進行教室清潔，趁學生離開、下一節課前完成。',
+    ],
+    巡邏: [
+      '課間教室巡查：確認無學生遺留貴重物品，關閉未使用的電器，檢查門窗。',
+      '請對教室進行安全巡查，確認電器關閉、門窗關好，避免財物損失。',
+    ],
+    補給: [
+      '請確認各教室粉筆、板擦數量。缺少的先補齊，並記錄在補給記錄表上。',
+      '教室補給任務：確認文具、教材、清潔用品存量，依需求補充。',
+    ],
+    維修: [
+      '教室設備巡檢：黑板/白板狀態、投影設備、空調、燈光，記錄需維修項目。',
+      '請檢查教室桌椅是否穩固、電器設備是否正常，回報任何需要維修的問題。',
+    ],
+    通用: [
+      '教室任務已接收，機器人將依據標準程序完成服務並回報。',
+      '建議派遣機器人前往指定教室，執行所需的服務任務。',
+    ],
+  },
+  操場: {
+    清潔: [
+      '操場清潔重點：清除地面垃圾、沖洗運動設施表面、確認排水溝暢通。',
+      '請在體育課後對操場進行清掃，特別注意看台和設施周邊的垃圾清理。',
+    ],
+    巡邏: [
+      '請沿操場周邊進行安全巡查，特別注意器材是否損壞、是否有學生在無監督狀態下使用設施。',
+      '操場安全巡邏：確認所有運動設備安全可用，學生使用規範，有緊急情況立即回報。',
+      '建議派遣機器人對操場進行全面巡查，確認運動設施安全無虞。',
+    ],
+    補給: [
+      '操場補給任務：確認飲水設施正常、急救箱物品齊全、運動器材庫存充足。',
+      '請檢查操場周邊的飲水點和衛生設施，補充必要的耗材。',
+    ],
+    維修: [
+      '操場設施檢查：籃球架、體育器材、跑道標線，記錄損壞情況並提交維修申請。',
+      '請對操場運動設備進行安全性評估，確認無潛在危險並記錄維修需求。',
+    ],
+    通用: [
+      '操場任務已接收，機器人將進行全面掃描並回傳現場狀況。',
+      '建議派遣機器人前往操場區域，執行環境監測和安全確認。',
+    ],
+  },
+  圖書館: {
+    清潔: [
+      '圖書館清潔要特別輕聲，優先整理歸還的書籍，再進行桌面和書架除塵。',
+      '圖書館清潔程序：整理書籍、清潔閱覽桌椅、地面掃除，避免影響閱讀環境。',
+    ],
+    巡邏: [
+      '圖書館巡查重點：確認書籍正確歸位、環境安靜有序、設備正常運作。',
+      '請對圖書館進行安全巡查，確認消防設備正常、緊急出口暢通。',
+    ],
+    補給: [
+      '圖書館補給：確認書籍歸還情況、館藏整齊，補充文具和學習輔助材料。',
+      '請確認圖書館的影印紙、文具等耗材庫存，並安排補充。',
+    ],
+    維修: [
+      '圖書館設備檢查：書架穩固性、電腦設備、照明系統，記錄需維修的項目。',
+      '請檢查圖書館借閱設備和電腦系統，確認正常運作並回報問題。',
+    ],
+    通用: [
+      '圖書館任務已接收，機器人將安靜地完成任務並回傳狀態。',
+      '建議派遣機器人前往圖書館，以低噪音模式執行服務任務。',
+    ],
+  },
+  餐廳: {
+    清潔: [
+      '餐廳清潔流程：餐後立即清理桌面、地面，消毒餐具放置區，保持通風。',
+      '餐廳清潔建議在用餐後30分鐘內完成，重點是桌面消毒和地面清潔。',
+    ],
+    巡邏: [
+      '餐廳用餐巡查：確認學生用餐秩序、食物浪費情況、環境衛生狀態。',
+      '請在用餐時段巡查餐廳，維持秩序並確認食品安全規範的執行。',
+    ],
+    補給: [
+      '餐廳補給任務：確認餐具、調味料、衛生用品存量，及時補充不足項目。',
+      '請確認餐廳衛生紙、消毒液等耗材充足，保持良好的衛生環境。',
+    ],
+    維修: [
+      '餐廳設施檢查：餐桌椅穩固性、食物加熱設備、自動販賣機，記錄問題。',
+      '請檢查餐廳廚具設備和食品保存設施，確認安全規範和正常運作。',
+    ],
+    通用: [
+      '餐廳任務已接收，機器人將完成標準服務流程並回報。',
+      '建議派遣機器人前往餐廳，確認用餐環境安全整潔。',
+    ],
+  },
+  行政區: {
+    清潔: [
+      '行政區清潔：辦公桌面整理、文件歸檔、地面清潔，注意保護機密文件。',
+      '請對行政辦公區進行清潔，特別注意電腦設備周圍的灰塵清除。',
+    ],
+    巡邏: [
+      '行政區安全巡查：確認門禁系統正常、重要文件妥善保管、訪客登記規範。',
+      '請巡查行政區域，確認人員進出符合規定，維護校園安全。',
+    ],
+    補給: [
+      '行政區補給：辦公文具、列印紙張、清潔用品，依需求補充。',
+      '請確認行政辦公室的基本耗材充足，支援日常行政運作。',
+    ],
+    維修: [
+      '行政區設備檢查：辦公電腦、印表機、電話系統，記錄需維修的設備。',
+      '請確認行政辦公設備正常運作，回報任何影響業務的設備問題。',
+    ],
+    通用: [
+      '行政區任務已接收，機器人將依權限完成服務並回傳狀態。',
+      '建議派遣機器人前往行政區域，執行指定的服務任務。',
+    ],
+  },
+  通用: {
+    清潔: [
+      '建議從該區域入口開始清潔，按照系統化路線完成，確保每個角落都覆蓋到。',
+      '清潔任務已接收，機器人將按照標準程序完成並回傳清潔完成報告。',
+    ],
+    巡邏: [
+      '建議派遣 1 號機前往指定區域自動巡邏，沿主要通道繞行一圈並回傳熱區人流。',
+      '巡邏任務已接收，機器人將前往指定區域完成全面掃描並回傳現場安全狀態。',
+      '建議派遣校園服務機 R-01 前往指定區域執行疏導廣播，先引導人流往開放走廊移動，再回傳現場狀態。',
+    ],
+    補給: [
+      '補給任務已接收，機器人將確認所需物資清單並完成補充。',
+      '建議先確認補給需求清單，機器人將依優先順序完成補給任務。',
+    ],
+    維修: [
+      '維修巡查任務已接收，機器人將掃描設施狀況並生成維修需求報告。',
+      '請確認需要維修的設施清單，機器人將進行檢查並標記問題點。',
+    ],
+    通用: [
+      '任務已接收，機器人將前往指定區域執行標準服務程序。',
+      '建議派遣機器人執行全面的區域服務，完成後回傳狀態報告。',
+    ],
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Student report fallback templates
+// ---------------------------------------------------------------------------
+
+type PerformanceTier = 'high' | 'medium' | 'low';
+
+function derivePerformanceTier(data: Record<string, unknown>): PerformanceTier {
+  const avg = data.averageScore ?? data.average ?? data.score ?? data.averageFocus;
+  if (typeof avg === 'number') {
+    if (avg >= 85) return 'high';
+    if (avg >= 60) return 'medium';
+    return 'low';
+  }
+  // Check for string indicators
+  const tier = String(data.tier ?? data.level ?? data.performance ?? '').toLowerCase();
+  if (/high|excellent|優|甲|good/.test(tier)) return 'high';
+  if (/low|poor|差|丁|weak/.test(tier)) return 'low';
+  return 'medium';
+}
+
+const STUDENT_REPORT_TEMPLATES: Record<PerformanceTier, string[]> = {
+  high: [
+    '{name}同學表現優異，學習態度積極，各科成績均達到優良水準。建議繼續保持，可嘗試參加競賽活動提升自我。',
+    '{name}同學學習成效卓越，在課堂上積極參與、表現突出。建議探索更多進階學習資源，持續挑戰自我。',
+    '{name}同學的學習表現令人欣喜，思考清晰、作業品質優秀。建議多幫助同學，在協助他人的過程中鞏固自己的知識。',
+  ],
+  medium: [
+    '{name}同學整體表現中等，有進步空間。建議加強自主學習習慣，課後多練習較弱的科目。',
+    '{name}同學有穩定的學習基礎，若能加強課前預習和課後複習，成績將能明顯提升。',
+    '{name}同學表現平穩，只要多花一點時間在薄弱科目上，相信很快就能看到進步。建議制定規律的學習計畫。',
+  ],
+  low: [
+    '{name}同學目前學習上遇到一些困難，建議與老師多溝通，參加課後輔導，相信只要努力一定能進步。',
+    '{name}同學近期學習有些吃力，建議先從最基礎的概念重新確認，一步一步建立信心，慢慢就會好起來。',
+    '{name}同學需要額外的學習支持，建議安排一對一輔導，找出困難所在，針對性地加強練習。',
+  ],
+};
+
+function formatReport(template: string, name: string): string {
+  return template.replace('{name}', name);
+}
+
+// ---------------------------------------------------------------------------
+// Exported functions
+// ---------------------------------------------------------------------------
+
+export async function generateTeacherReply(question: string, subject?: string): Promise<string> {
+  try {
+    const result = await askGemini('/api/ai/teacher-reply', { question, subject });
+    if (typeof result.reply === 'string' && result.reply.trim()) return result.reply;
+    if (typeof result.text === 'string' && result.text.trim()) return result.text;
+  } catch {
+    // fall through to local templates
+  }
+
+  // Direct keyword overrides for specific well-known topics
+  if (/達文西|文藝復興|三傑/.test(question)) {
+    return '文藝復興三傑是達文西、米開朗基羅與拉斐爾。你可以先記「畫作、雕塑、聖母像」三個關鍵線索，幫助記憶他們各自的代表作品。';
+  }
+
+  const subjectKey = subject ? detectSubject(subject) : detectSubject(question);
+  const situation = detectSituation(question);
+  const templates = TEACHER_TEMPLATES[subjectKey]?.[situation] ?? TEACHER_TEMPLATES['通用'][situation];
+  return pickTemplate(templates);
+}
+
+export async function generateDispatchRecommendation(zone: string, taskType: DispatchTaskType | string): Promise<string> {
+  try {
+    const result = await askGemini('/api/ai/dispatch-recommend', { zone, taskType });
+    if (typeof result.recommendation === 'string' && result.recommendation.trim()) return result.recommendation;
+    if (typeof result.text === 'string' && result.text.trim()) return result.text;
+  } catch {
+    // fall through to local templates
+  }
+
+  const zoneKey = detectZone(zone);
+  const taskKey = detectTask(taskType);
+  const templates = DISPATCH_TEMPLATES[zoneKey]?.[taskKey] ?? DISPATCH_TEMPLATES['通用'][taskKey];
+  const picked = pickTemplate(templates);
+
+  // Replace generic "指定區域" placeholders with the actual zone identifier
+  const withZone = picked
+    .replace(/指定區域/g, `區域 ${zone}`)
+    .replace(/該區域/g, `區域 ${zone}`);
+
+  return withZone;
+}
+
+export async function generateStudentReport(name: string, data: Record<string, unknown>): Promise<string> {
+  try {
+    const result = await askGemini('/api/ai/student-report', { name, data });
+    if (typeof result.report === 'string' && result.report.trim()) return result.report;
+    if (typeof result.text === 'string' && result.text.trim()) return result.text;
+  } catch {
+    // fall through to local templates
+  }
+
+  const tier = derivePerformanceTier(data);
+  const templates = STUDENT_REPORT_TEMPLATES[tier];
+  return formatReport(pickTemplate(templates), name);
+}
+
+// ---------------------------------------------------------------------------
+// Legacy functions — upgraded to use Gemini proxy with local fallback
+// ---------------------------------------------------------------------------
+
+export async function generateClassSummary(state: AppState): Promise<string> {
+  const alerts = state.teachingSignals.filter((signal) => signal.type === 'alert').length;
+  const questions = state.teachingSignals.filter((signal) => signal.type === 'question').length;
+  const present = state.attendance.scanned ? `${state.attendance.present}/${state.attendance.total}` : '尚未點名';
+  const runningRobots = state.robots.filter((r) => r.isRunning).length;
+  const pendingTasks = state.tasks.filter((t) => t.status === 'pending').length;
+
+  try {
+    const prompt =
+      `請用1-2句話總結目前校園服務狀況：` +
+      `${runningRobots}台機器人運作中，${pendingTasks}項任務待處理，` +
+      `${alerts}則分心告警，${questions}則課堂提問，出席：${present}。`;
+    const data = await askGemini('/api/ai/teacher-reply', { question: prompt, subject: '綜合' });
+    const reply = data.reply ?? data.text ?? String(Object.values(data)[0] ?? '');
+    if (reply.trim()) return reply;
+  } catch {
+    // fall through to local template
+  }
+
+  return `本堂課目前專注度穩定，仍有 ${alerts} 則分心告警與 ${questions} 則課堂提問待處理。出席狀態：${present}。`;
+}
+
+export async function generateStudentInsights(report: StudentReport): Promise<string[]> {
+  try {
+    const data = await askGemini('/api/ai/student-report', { name: report.name || '學生', data: report as unknown as Record<string, unknown> });
+    const text = data.report ?? data.text ?? String(Object.values(data)[0] ?? '');
+    if (text.trim()) {
+      // Split on newlines or sentence endings to return an array of insights
+      const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+      if (lines.length >= 2) return lines.slice(0, 3);
+      return [text];
+    }
+  } catch {
+    // fall through to local template
+  }
+
+  return [
+    `${report.name} 屬於${report.learningStyle}，搭配圖像、流程圖或實體示範時專注度較高。`,
+    `平均專注度 ${report.averageFocus}%；建議在課程 20-25 分鐘處加入短問答或視覺提示。`,
+    `近期紀錄：${report.events[0] ?? '尚無異常紀錄。'}`,
+  ];
+}

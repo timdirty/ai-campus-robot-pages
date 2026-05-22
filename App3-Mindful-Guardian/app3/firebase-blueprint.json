@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile data including preferences and role.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastMood": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "role"]
+    },
+    "Alert": {
+      "title": "Risk Alert",
+      "description": "Monitoring alerts for students or teachers.",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "className": { "type": "string" },
+        "time": { "type": "string" },
+        "subject": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "riskLevel": { "type": "string", "enum": ["high", "medium", "low"] },
+        "status": { "type": "string", "enum": ["new", "processing", "resolved"] },
+        "avatar": { "type": "string" },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ForestPost": {
+      "title": "Forest Post",
+      "description": "Anonymous posts in the Mind Forest.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["thought", "gratitude", "support"] },
+        "likes": { "type": "number" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Intervention": {
+      "title": "AI Intervention",
+      "description": "Deployed AI emotional support modules.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "time": { "type": "string" },
+        "icon": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Node": {
+      "title": "Monitoring Node",
+      "description": "Campus data aggregation points.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "latency": { "type": "string" },
+        "load": { "type": "number" },
+        "location": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Individual user profiles."
+    },
+    "alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "Campus risk alerts."
+    },
+    "forest_posts/{postId}": {
+      "schema": "ForestPost",
+      "description": "Anonymous community posts."
+    },
+    "interventions/{id}": {
+      "schema": "Intervention",
+      "description": "Active AI interventions."
+    },
+    "nodes/{id}": {
+      "schema": "Node",
+      "description": "System monitoring nodes."
+    }
+  }
+}

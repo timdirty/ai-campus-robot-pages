@@ -1,0 +1,52 @@
+{
+  "name": "campus-mindful-guardian-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx server/serialBridge.ts",
+    "dev": "concurrently -n web,bridge -c magenta,cyan \"npm:dev:web\" \"npm:dev:bridge\"",
+    "dev:web": "vite --port=3000 --host=0.0.0.0",
+    "dev:web:https": "VITE_DEV_HTTPS=1 vite --port=3001 --host=0.0.0.0",
+    "dev:https": "VITE_DEV_HTTPS=1 VITE_PORT=3001 HTTPS_PAIRING_PORT=3443 concurrently -n web,bridge,pair -c magenta,cyan,green \"npm:dev:web:https\" \"npm:dev:bridge\" \"npm:pair:https\"",
+    "dev:bridge": "tsx server/serialBridge.ts",
+    "pair:https": "npm run build && tsx server/httpsPairingServer.ts",
+    "build": "vite build",
+    "build:pages": "node ../scripts/build-github-pages.mjs",
+    "preview": "vite preview",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "lint": "tsc --noEmit",
+    "test": "node scripts/run-tests.mjs",
+    "check": "npm run test && npm run lint && npm run build"
+  },
+  "dependencies": {
+    "@google/genai": "^1.50.1",
+    "@serialport/parser-readline": "^13.0.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "firebase": "^12.12.1",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "qrcode": "^1.5.4",
+    "react-dom": "^19.0.1",
+    "serialport": "^13.0.0",
+    "vite": "^6.2.3",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.14",
+    "@types/ws": "^8.18.1",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}
