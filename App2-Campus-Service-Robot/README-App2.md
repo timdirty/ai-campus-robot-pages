@@ -2,7 +2,14 @@
 
 ## Mac
 
-雙擊 `start-app2-mac.command`。
+建議用 Git clone 取得專案，然後雙擊 `start-app2-mac.command`。
+
+如果 macOS 顯示無法執行，開 Terminal 到本資料夾執行一次：
+
+```bash
+chmod +x start-app2-mac.command
+./start-app2-mac.command
+```
 
 ## Windows
 
@@ -21,4 +28,5 @@
 ## 預設網址
 
 - App2 前端：http://localhost:3000
-- App2 bridge：http://localhost:3203
+- App2 bridge：http://localhost:3204
+- App2 Robot Display：http://localhost:3000/robot-display.html?bridge=localhost:3204

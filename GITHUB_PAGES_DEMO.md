@@ -17,6 +17,35 @@ Before presenting both App2 and App3 together, run from the workspace root:
 npm run competition:verify
 ```
 
+## New Computer One-Click Start
+
+Use Git clone whenever possible. Git preserves the Mac executable bit for `.command` launchers; ZIP downloads may require one `chmod +x`.
+
+| Machine | App2 local full demo | App3 local full demo |
+| --- | --- | --- |
+| Windows | Double-click `App2-Campus-Service-Robot/start-app2-windows.bat` | Double-click `App3-Mindful-Guardian/start-app3-windows.bat` |
+| macOS | Double-click `App2-Campus-Service-Robot/start-app2-mac.command` | Double-click `App3-Mindful-Guardian/start-app3-mac.command` |
+
+First-run behavior on a new computer:
+
+- The launcher checks Node.js / npm and opens the Node.js download page if it cannot install automatically.
+- The launcher runs `npm install` inside the app folder.
+- Python / YOLO dependencies are optional; if installation fails, App2 and App3 continue with browser/local fallback flows.
+- App2 uses `http://localhost:3000` and bridge `http://localhost:3204`.
+- App3 uses `http://localhost:11503`, bridge `http://localhost:3203`, and pairing display `https://localhost:3443/robot-display.html`.
+
+macOS ZIP fallback:
+
+```bash
+cd App2-Campus-Service-Robot
+chmod +x start-app2-mac.command
+./start-app2-mac.command
+
+cd ../App3-Mindful-Guardian
+chmod +x start-app3-mac.command
+./start-app3-mac.command
+```
+
 Current App2 validation coverage:
 
 - Static competition audit for forbidden wording, old ports, legacy robot names, mojibake, and required demo-guide sections.

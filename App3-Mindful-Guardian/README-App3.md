@@ -2,7 +2,14 @@
 
 ## Mac
 
-雙擊 `start-app3-mac.command`。
+建議用 Git clone 取得專案，然後雙擊 `start-app3-mac.command`。
+
+如果 macOS 顯示無法執行，開 Terminal 到本資料夾執行一次：
+
+```bash
+chmod +x start-app3-mac.command
+./start-app3-mac.command
+```
 
 ## Windows
 
@@ -22,4 +29,5 @@
 
 - App3 前端：http://localhost:11503
 - App3 bridge：http://localhost:3203
-- 機器人顯示：http://localhost:11503/robot-display.html
+- App3 Robot Display：http://localhost:11503/robot-display.html
+- App3 HTTPS pairing display：https://localhost:3443/robot-display.html

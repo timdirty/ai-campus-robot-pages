@@ -11,7 +11,7 @@ const appDir = fs.existsSync(packagedAppDir) ? packagedAppDir : repoAppDir;
 const isWin = process.platform === 'win32';
 const npm = isWin ? 'npm.cmd' : 'npm';
 const webPort = Number(process.env.APP2_WEB_PORT ?? 3000);
-const bridgePort = Number(process.env.APP2_BRIDGE_PORT ?? process.env.BRIDGE_PORT ?? 3203);
+const bridgePort = Number(process.env.APP2_BRIDGE_PORT ?? process.env.BRIDGE_PORT ?? 3204);
 const children = [];
 
 function run(command, options = {}) {
