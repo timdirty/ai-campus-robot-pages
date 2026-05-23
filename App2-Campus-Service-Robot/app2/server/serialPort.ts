@@ -1,5 +1,5 @@
 // Resilient serial-port helper for the App 2 service-robot bridge.
-// - 自動偵測 Arduino-like 串口（R4 WiFi / Minima 都能配對）
+// - 自動偵測 Arduino 類型串口（R4 WiFi / Minima 都能配對）
 // - 拔掉 USB / Arduino 重啟後會自動重連（exponential backoff）
 // - Port busy 會嘗試清掉佔用者再重試一次
 // - 對外暴露 health telemetry 給 /api/health 用
@@ -199,7 +199,7 @@ async function openPort(): Promise<SerialPort | null> {
   try {
     const portPath = await pickPortPath();
     if (!portPath) {
-      telemetry.lastError = 'no Arduino-like serial port found';
+      telemetry.lastError = '未偵測到 Arduino 序列埠，已切換離線展示模式';
       scheduleReconnect('no port detected');
       return null;
     }
@@ -256,12 +256,12 @@ export async function sendCommand(command: string): Promise<{ok: boolean; messag
   try {
     const port = await openPort();
     if (!port) {
-      return {ok: false, message: telemetry.lastError ?? 'No Arduino available. Plug in the UNO R4 (WiFi or Minima) or set ARDUINO_PORT.'};
+      return {ok: false, message: telemetry.lastError ?? '未偵測到 Arduino 序列埠，已保留指令並使用離線展示模式。'};
     }
     await new Promise<void>((resolve, reject) => {
       port.write(`${command}\n`, (error) => (error ? reject(error) : resolve()));
     });
-    return {ok: true, message: `Sent ${command}`};
+    return {ok: true, message: `已送出 ${command}`};
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     telemetry.lastError = message;
@@ -278,7 +278,7 @@ export async function queryCommand(command: string, timeoutMs = 1200): Promise<{
     if (!port) {
       return {
         ok: false,
-        message: telemetry.lastError ?? 'No Arduino available. Plug in the UNO R4 (WiFi or Minima) or set ARDUINO_PORT.',
+        message: telemetry.lastError ?? '未偵測到 Arduino 序列埠，已保留指令並使用離線展示模式。',
         response: null,
       };
     }
@@ -289,7 +289,7 @@ export async function queryCommand(command: string, timeoutMs = 1200): Promise<{
     const response = await responsePromise;
     return {
       ok: response !== null,
-      message: response === null ? `No serial response for ${command}` : `Received ${response}`,
+      message: response === null ? `序列埠未回應 ${command}` : `已收到 ${response}`,
       response,
     };
   } catch (error) {

@@ -1,5 +1,5 @@
 // Resilient serial-port helper for the App 3 guardian bridge.
-// - 自動偵測 Arduino-like 串口（R4 WiFi / Minima 都能配對）
+// - 自動偵測 Arduino 類型串口（R4 WiFi / Minima 都能配對）
 // - 拔掉 USB / Arduino 重啟後會自動重連（exponential backoff）
 // - Port busy 會嘗試清掉佔用者再重試一次
 // - 解析 SENSORS:... 行給 zone 資料用
@@ -460,8 +460,8 @@ export async function assignDrivePort(portPath: string | null): Promise<{ok: boo
 
   const opened = await openDrivePort();
   return opened?.isOpen
-    ? {ok: true, message: `drive port assigned: ${drivePortPath}`}
-    : {ok: false, message: `drive port unavailable: ${drivePortPath}`};
+    ? {ok: true, message: `底盤連接埠已指定：${drivePortPath}`}
+    : {ok: false, message: `底盤連接埠無法使用：${drivePortPath}`};
 }
 
 async function openPort(): Promise<SerialPort | null> {
@@ -471,7 +471,7 @@ async function openPort(): Promise<SerialPort | null> {
   try {
     const portPath = await pickPortPath();
     if (!portPath) {
-      telemetry.lastError = 'no Arduino-like serial port found';
+      telemetry.lastError = '未偵測到 Arduino 序列埠，已切換離線展示模式';
       scheduleReconnect('no port detected');
       return null;
     }
@@ -527,12 +527,12 @@ export async function sendCommand(command: string): Promise<{ok: boolean; messag
   try {
     const port = await openPort();
     if (!port) {
-      return {ok: false, message: telemetry.lastError ?? 'No Arduino available. Plug in the UNO R4 (WiFi or Minima) or set ARDUINO_PORT.'};
+      return {ok: false, message: telemetry.lastError ?? '未偵測到 Arduino 序列埠，已保留指令並使用離線展示模式。'};
     }
     await new Promise<void>((resolve, reject) => {
       port.write(`${command}\n`, (error) => (error ? reject(error) : resolve()));
     });
-    return {ok: true, message: `Sent ${command}`};
+    return {ok: true, message: `已送出 ${command}`};
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     telemetry.lastError = message;
@@ -542,7 +542,7 @@ export async function sendCommand(command: string): Promise<{ok: boolean; messag
 
 export async function sendSensorCommand(portPath: string, command: string): Promise<{ok: boolean; message: string}> {
   const normalized = command.trim().toUpperCase();
-  if (!normalized) return {ok: false, message: 'command required'};
+  if (!normalized) return {ok: false, message: '缺少感測器指令'};
 
   if (process.env.DEMO_SIMULATE_HARDWARE === '1') {
     return {ok: true, message: `[SIM:${portPath}] ${normalized}`};
@@ -555,7 +555,7 @@ export async function sendSensorCommand(portPath: string, command: string): Prom
 
     const port = await openSensorPort(portPath);
     if (!port?.isOpen) {
-      return {ok: false, message: `sensor port unavailable: ${portPath}`};
+      return {ok: false, message: `感測器連接埠無法使用：${portPath}`};
     }
 
     await new Promise<void>((resolve, reject) => {
@@ -568,7 +568,7 @@ export async function sendSensorCommand(portPath: string, command: string): Prom
       });
     });
 
-    return {ok: true, message: `Sent ${normalized} to ${portPath}`};
+    return {ok: true, message: `已送出 ${normalized} 到 ${portPath}`};
   } catch (error) {
     return {ok: false, message: error instanceof Error ? error.message : String(error)};
   }
@@ -576,20 +576,20 @@ export async function sendSensorCommand(portPath: string, command: string): Prom
 
 export async function sendDriveCommand(command: string): Promise<{ok: boolean; message: string}> {
   const normalized = command.trim().toUpperCase();
-  if (!normalized) return {ok: false, message: 'command required'};
+  if (!normalized) return {ok: false, message: '缺少底盤指令'};
 
   if (process.env.DEMO_SIMULATE_HARDWARE === '1') {
     return {ok: true, message: `[SIM:drive] ${normalized}`};
   }
 
   if (!drivePortPath) {
-    return {ok: false, message: 'drive Arduino is not assigned'};
+    return {ok: false, message: '尚未指定底盤 Arduino'};
   }
 
   try {
     const port = await openDrivePort();
     if (!port?.isOpen) {
-      return {ok: false, message: `drive port unavailable: ${drivePortPath}`};
+      return {ok: false, message: `底盤連接埠無法使用：${drivePortPath}`};
     }
 
     await new Promise<void>((resolve, reject) => {
@@ -602,7 +602,7 @@ export async function sendDriveCommand(command: string): Promise<{ok: boolean; m
       });
     });
 
-    return {ok: true, message: `Sent ${normalized} to drive ${drivePortPath}`};
+    return {ok: true, message: `已送出 ${normalized} 到底盤 ${drivePortPath}`};
   } catch (error) {
     return {ok: false, message: error instanceof Error ? error.message : String(error)};
   }

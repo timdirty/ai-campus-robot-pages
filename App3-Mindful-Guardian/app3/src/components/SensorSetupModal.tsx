@@ -110,7 +110,7 @@ export function SensorSetupModal({ports, drivePorts, sensors, onClose, onChanged
     setTestMessage(null);
     const result = await testSensorLed(portPath);
     setTestBusyPath(null);
-    setTestMessage(result.ok ? '已送出閃燈測試，請看目前選取的感測板' : result.message);
+    setTestMessage(result.ok ? '已送出閃燈確認，請看目前選取的感測板' : result.message);
     if (result.ok) triggerFlash(portPath);
   };
 
@@ -133,7 +133,7 @@ export function SensorSetupModal({ports, drivePorts, sensors, onClose, onChanged
     setTestMessage(null);
     const result = await testDriveMotor();
     setDriveBusy(false);
-    setTestMessage(result.ok ? '已送出底盤馬達測試' : result.message);
+    setTestMessage(result.ok ? '已送出底盤馬達校驗' : result.message);
     if (result.ok && assignedDrivePort) triggerFlash(assignedDrivePort.path);
   };
 
@@ -372,7 +372,7 @@ export function SensorSetupModal({ports, drivePorts, sensors, onClose, onChanged
                     className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-40"
                   >
                     <Zap className={['h-4 w-4', driveBusy ? 'animate-pulse' : ''].join(' ')} />
-                    底盤測試
+                    底盤校驗
                   </button>
                   {assignedDrivePort && (
                     <button
@@ -419,7 +419,7 @@ export function SensorSetupModal({ports, drivePorts, sensors, onClose, onChanged
                           className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-teal-700 disabled:opacity-50"
                         >
                           <Zap className={['h-4 w-4', testBusyPath === selectedPort.path ? 'animate-pulse' : ''].join(' ')} />
-                          {testBusyPath === selectedPort.path ? '測試中' : '閃燈測試'}
+                          {testBusyPath === selectedPort.path ? '校驗中' : '閃燈確認'}
                         </button>
                       </div>
                       {testMessage && (

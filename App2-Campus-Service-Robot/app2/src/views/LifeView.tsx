@@ -23,6 +23,7 @@ export function LifeView({
   const [editingSchedule, setEditingSchedule] = useState('');
   const [editTime, setEditTime] = useState('');
   const [editArea, setEditArea] = useState('');
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
 
   const isEmergency = state.campusStatus.isEmergency;
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -179,18 +180,71 @@ export function LifeView({
         <ScanMapCard active onSafetyBroadcast={handleSafetyBroadcast} />
       </section>
 
-      <section data-tour="life-services" className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
-        <BellScheduleCard />
+      <section data-tour="life-services" className="grid grid-cols-1 gap-4 px-1 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <BroadcastCard
           showToast={showToast}
           onDispatch={({zones, message}) => actions.addDispatchTask({zone: zones, taskType: 'broadcast' as DispatchTaskType, message})}
         />
+        <div data-e2e="life-demo-focus" className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.28em] text-primary">Life Command</p>
+              <h3 className="mt-1 font-headline text-base font-black text-on-surface">生活安全中樞</h3>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Megaphone size={18} />
+            </div>
+          </div>
+          <p className="text-sm font-bold leading-relaxed text-on-surface-variant">
+            天氣或走廊風險出現後，系統協助老師完成選區、廣播、派遣 R-01，最後留下可檢查的紀錄。
+          </p>
+          <div className="mt-5 space-y-2">
+            {['情境觸發', '區域廣播', '機器人任務'].map((label, index) => (
+              <div key={label} className="flex items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-lowest px-3 py-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-black text-white">
+                  {index + 1}
+                </span>
+                <span className="text-xs font-black text-on-surface">{label}</span>
+                <CheckCircle2 size={14} className="ml-auto text-primary" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setModal('logs')}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-primary/25 bg-primary/10 text-xs font-black text-primary transition active:scale-95"
+            >
+              <Terminal size={14} />
+              查看紀錄
+            </button>
+            <button
+              type="button"
+              data-e2e="life-advanced-toggle"
+              onClick={() => setShowAdvancedTools(value => !value)}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-outline-variant/25 bg-surface-container-lowest text-xs font-black text-on-surface-variant transition hover:border-primary/30 hover:text-primary active:scale-95"
+            >
+              <Calendar size={14} />
+              {showAdvancedTools ? '收合工具' : '排程工具'}
+            </button>
+          </div>
+        </div>
       </section>
 
-      <section className="px-1">
-        <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/30 shadow-sm">
+      {showAdvancedTools && (
+        <motion.section
+          data-e2e="life-advanced-tools"
+          initial={{opacity: 0, y: 8}}
+          animate={{opacity: 1, y: 0}}
+          className="grid grid-cols-1 gap-4 px-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]"
+        >
+          <BellScheduleCard />
+          <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-headline text-sm font-bold">生活任務排程</h3>
+            <div>
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-on-surface-variant/60">Advanced</p>
+              <h3 className="font-headline text-sm font-bold">生活任務排程</h3>
+            </div>
             <button onClick={() => navigateTo('task-schedule')} className="flex items-center gap-1 text-[10px] text-primary font-bold hover:underline">
               編輯排程 <ChevronRight size={11} />
             </button>
@@ -225,17 +279,8 @@ export function LifeView({
             ))}
           </div>
         </div>
-      </section>
-
-      <div className="px-1 flex justify-end">
-        <button
-          onClick={() => setModal('logs')}
-          className="flex items-center gap-1.5 text-[10px] text-on-surface-variant/40 hover:text-primary transition-colors font-mono font-bold"
-        >
-          <Terminal size={12} />
-          系統日誌
-        </button>
-      </div>
+        </motion.section>
+      )}
 
       <BottomSheet isOpen={modal === 'logs'} onClose={() => setModal(null)} title="系統紀錄">
         <div className="p-6 bg-[#0c121d] rounded-[2.5rem] mx-4 mb-10 mt-2 font-mono text-[11px] text-[#a9b1d6] leading-relaxed h-[50vh] overflow-y-auto custom-scrollbar shadow-2xl border-4 border-surface-container-low">

@@ -811,7 +811,7 @@ const RobotSignalHud = ({emotionMeta, assignment, ambientAudio, connected, movin
   const tone = ZONE_TONES[risk] || ZONE_TONES.low;
   const soundLevel = Math.max(0, Math.min(100, Number(ambientAudio?.volumeIndex) || 0));
   const soundNeedleDeg = -58 + (soundLevel * 1.16);
-  const missionLabel = assignment?.missionId ? `任務 ${assignment.missionId}` : 'Guardian Loop';
+  const missionLabel = assignment?.missionId ? `任務 ${assignment.missionId}` : 'Guardian Flow';
   const missionPhase = moving
     ? '派遣中'
     : assignment?.active
@@ -861,7 +861,7 @@ const RobotSignalHud = ({emotionMeta, assignment, ambientAudio, connected, movin
       <div className="pointer-events-auto overflow-hidden rounded-2xl border border-teal-200/70 bg-slate-950/90 p-3 text-white shadow-xl shadow-teal-900/20 backdrop-blur-xl">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-[0.24em] text-teal-200">Live Guardian Loop</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.24em] text-teal-200">Live Guardian Flow</p>
             <p className="mt-1 truncate font-display text-lg font-black leading-tight">{missionPhase}</p>
             <p className="mt-0.5 truncate text-[11px] font-bold text-slate-300">{missionLabel}</p>
           </div>
@@ -872,7 +872,7 @@ const RobotSignalHud = ({emotionMeta, assignment, ambientAudio, connected, movin
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[10px] font-black text-slate-100">
           <span className="rounded-lg bg-white/10 px-2 py-1">AI 情緒</span>
           <span className="rounded-lg bg-white/10 px-2 py-1">聲量指針</span>
-          <span className="rounded-lg bg-white/10 px-2 py-1">任務閉環</span>
+          <span className="rounded-lg bg-white/10 px-2 py-1">任務流程</span>
         </div>
       </div>
       {cards.map((card, index) => (

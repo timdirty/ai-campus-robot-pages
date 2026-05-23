@@ -163,13 +163,18 @@ try {
   const robot2 = await openPage(`${base}/app2/robot-display.html`, 'robot2');
   pages.push(robot2);
   await waitFor(robot2, 'document.body.innerText.length > 60');
-  await app2.eval(`(() => {
-    const ch = new BroadcastChannel('app2-robot-display');
-    ch.postMessage({type: 'display_emotion', emotion: 'happy', message: 'App2 pages sync ok', source: 'e2e'});
-    setTimeout(() => ch.close(), 100);
-    return true;
-  })()`);
-  await new Promise((resolve) => setTimeout(resolve, 1300));
+  const app2SyncMessage = 'App2 pages sync ok';
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await app2.eval(`(() => {
+      const ch = new BroadcastChannel('app2-robot-display');
+      ch.postMessage({type: 'display_emotion', emotion: 'happy', message: ${JSON.stringify(app2SyncMessage)}, source: 'e2e'});
+      setTimeout(() => ch.close(), 140);
+      return true;
+    })()`);
+    const synced = await waitFor(robot2, `window.__APP2_LAST_DISPLAY_EVENT?.message === ${JSON.stringify(app2SyncMessage)}`, 1800);
+    if (synced) break;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
   const robot2Text = await robot2.text();
   const robot2LastEvent = (await robot2.eval('window.__APP2_LAST_DISPLAY_EVENT || null')).result.result.value;
 
@@ -180,12 +185,17 @@ try {
   const app3Buttons = (await app3.eval('document.querySelectorAll("button").length')).result.result.value;
   const app3DesktopMetrics = (await app3.eval(`(() => {
     const text = document.body.innerText;
+    const map = document.querySelector('[data-e2e="campus-map-image"]');
+    const mapRect = map?.getBoundingClientRect();
     return {
       pageOverflow: document.documentElement.scrollHeight - window.innerHeight,
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
       hasScriptSteps: text.includes('學生操作主線') || text.includes('AI 整理') || text.includes('展示步驟'),
       mainTop: Math.round(document.querySelector('main')?.getBoundingClientRect().top ?? -1),
       mainBottom: Math.round(document.querySelector('main')?.getBoundingClientRect().bottom ?? -1),
+      mapVisible: Boolean(mapRect && mapRect.height >= 280 && mapRect.width >= 600 && mapRect.top >= -2 && mapRect.top < window.innerHeight - 160),
+      mapHeight: Math.round(mapRect?.height ?? 0),
+      mapTop: Math.round(mapRect?.top ?? -1),
     };
   })()`)).result.result.value;
 
@@ -308,6 +318,7 @@ try {
     app3DesktopMetrics.pageOverflow > 2 ||
     app3DesktopMetrics.horizontalOverflow ||
     app3DesktopMetrics.hasScriptSteps ||
+    !app3DesktopMetrics.mapVisible ||
     app3PanelChecks.some((item) => item.horizontalOverflow || item.drawerOffscreen || item.buttons < 2) ||
     !result.robot3Loaded ||
     !result.teacherHandoffSynced ||

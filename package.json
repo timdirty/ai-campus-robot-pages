@@ -7,6 +7,7 @@
     "pages:build": "node scripts/build-github-pages.mjs",
     "pages:verify": "node scripts/verify-github-pages.mjs",
     "pages:check": "npm run pages:build && npm run pages:verify",
-    "demo:stress": "node scripts/verify-demo-stress.mjs --rounds=100"
+    "demo:stress": "node scripts/verify-demo-stress.mjs --rounds=100",
+    "competition:verify": "npm --prefix App2-Campus-Service-Robot/app2 run verify:competition && npm --prefix App3-Mindful-Guardian/app3 run check && npm run pages:build && npm run pages:verify && npm run demo:stress"
   }
 }

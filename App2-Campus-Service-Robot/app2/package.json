@@ -14,8 +14,11 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
+    "audit:competition": "node scripts/competition-audit.mjs",
+    "test:api": "node scripts/api-smoke.mjs",
     "test:e2e": "node scripts/e2e-stress.mjs",
-    "check": "npm run test && npm run lint && npm run build"
+    "check": "npm run test && npm run lint && npm run build",
+    "verify:competition": "npm run audit:competition && npm run check && npm run test:api && npm run test:e2e"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

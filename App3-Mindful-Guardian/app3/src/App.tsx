@@ -1210,7 +1210,7 @@ function AppContent() {
       {/* AI health banner — below header so it never covers navigation */}
       {proxyOnline === false && !bannerDismissed && !STATIC_DEMO_APP && (
         <div role="status" className="flex items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-          <span>本機 AI 備援已啟用：{proxyHealth.message}。區域判讀、事件分級、建議話術與派遣閉環仍可完整展示。</span>
+          <span>本機 AI 備援已啟用：{proxyHealth.message}。區域判讀、事件分級、建議話術與派遣流程仍可完整展示。</span>
           <button
             onClick={() => setBannerDismissed(true)}
             aria-label="關閉提示"
@@ -1462,7 +1462,7 @@ function CommandCenterScreen({
   const showcaseHighlights = [
     {label: 'AI 多模態', value: '聲音 / 影像 / 情緒融合', tone: 'teal' as SignalTone, icon: Radar},
     {label: '隱私優先', value: '匿名訊號與本機備援', tone: 'violet' as SignalTone, icon: ShieldCheck},
-    {label: 'Robot 閉環', value: '派遣 / 到場 / 老師接手', tone: 'emerald' as SignalTone, icon: Bot},
+    {label: 'Robot 接力', value: '派遣 / 到場 / 老師接手', tone: 'emerald' as SignalTone, icon: Bot},
     {label: '即時聲量', value: '動畫指針與趨勢線', tone: 'amber' as SignalTone, icon: Volume2},
   ];
   const campusStatusLabel = handoffZone ? `${handoffZone.name} · 老師接手中` : viewModel.campusHealthLabel;
@@ -1674,7 +1674,7 @@ function CampusMap2D({
         onSelectZone={onSelectZone}
         onOpenZoneInsight={onOpenZoneInsight}
       />
-      <div className="relative min-h-[20rem] flex-1 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-inner lg:min-h-0">
+      <div data-e2e="campus-map-image" className="order-1 relative min-h-[18rem] flex-1 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-inner sm:min-h-[22rem] lg:min-h-[20rem] xl:min-h-[24rem]">
         <img
           src="./campus-map-cartoon.png"
           alt="卡通風校園地圖"
@@ -1898,7 +1898,7 @@ function ZoneStatusBar({
   onOpenZoneInsight: (zone: SchoolZoneStatus) => void;
 }) {
   return (
-    <div className="mb-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+    <div className="order-2 mt-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-black tracking-widest text-teal-600 uppercase">AI 區域燈號</p>

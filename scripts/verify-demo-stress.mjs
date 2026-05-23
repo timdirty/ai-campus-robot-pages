@@ -23,14 +23,14 @@ const teacherHandoffLine = `${libraryName} \u00b7 ${teacherHandoff}\u4e2d`;
 const demoHighlights = [
   'AI \u591a\u6a21\u614b',
   '\u96b1\u79c1\u512a\u5148',
-  'Robot \u9589\u74b0',
+  'Robot \u63a5\u529b',
   '\u5373\u6642\u8072\u91cf',
 ];
 const robotHudHighlights = [
-  'Live Guardian Loop',
+  'Live Guardian Flow',
   'AI \u60c5\u7dd2',
   '\u8072\u91cf\u6307\u91dd',
-  '\u4efb\u52d9\u9589\u74b0',
+  '\u4efb\u52d9\u6d41\u7a0b',
 ];
 const requiredDocsFiles = [
   'index.html',
@@ -334,15 +334,20 @@ try {
   })()`)).result.result.value;
   const baseline = (await app3.eval(`(() => {
     const text = document.body.innerText;
+    const map = document.querySelector('[data-e2e="campus-map-image"]');
+    const mapRect = map?.getBoundingClientRect();
     return {
       portal: ${JSON.stringify(portalText)}.includes('App2') && ${JSON.stringify(portalText)}.includes('App3'),
       highlights: ${JSON.stringify(demoHighlights)}.every((item) => text.includes(item)),
       pageOverflow: document.documentElement.scrollHeight - window.innerHeight,
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+      mapVisible: Boolean(mapRect && mapRect.height >= 280 && mapRect.width >= 600 && mapRect.top >= -2 && mapRect.top < window.innerHeight - 160),
+      mapHeight: Math.round(mapRect?.height ?? 0),
+      mapTop: Math.round(mapRect?.top ?? -1),
       hasBadScriptText: text.includes('\u5b78\u751f\u64cd\u4f5c\u4e3b\u7dda') || text.includes('AI \u6574\u7406') || text.includes('\u5c55\u793a\u6b65\u9a5f'),
     };
   })()`)).result.result.value;
-  const robotHudReady = await waitFor(robot3, `document.body.textContent.includes('Live Guardian Loop') || document.body.textContent.includes('LIVE GUARDIAN LOOP')`, 7000);
+  const robotHudReady = await waitFor(robot3, `document.body.textContent.includes('Live Guardian Flow') || document.body.textContent.includes('LIVE GUARDIAN FLOW')`, 7000);
   const robotBaseline = (await robot3.eval(`(() => {
     const text = document.body.textContent || '';
     const controls = document.querySelector('.robot-display-controls');
@@ -377,8 +382,9 @@ try {
   }
   if (!baseline.highlights) failures.push('App3 demo highlights missing');
   if (baseline.pageOverflow > 2 || baseline.horizontalOverflow) failures.push(`App3 main overflow ${JSON.stringify(baseline)}`);
+  if (!baseline.mapVisible) failures.push(`App3 campus map not visible ${JSON.stringify(baseline)}`);
   if (baseline.hasBadScriptText) failures.push('App3 main still contains script-step wording');
-  if (!robotHudReady) failures.push('App3 robot HUD missing Live Guardian Loop');
+  if (!robotHudReady) failures.push('App3 robot HUD missing Live Guardian Flow');
   if (!robotBaseline.hasControls || !robotBaseline.allControlButtonsVisible || !robotBaseline.hudHighlights || robotBaseline.horizontalOverflow || robotBaseline.controlsOffscreen || robotBaseline.buttons < 5) {
     failures.push(`App3 robot demo controls failed ${JSON.stringify(robotBaseline)}`);
   }
@@ -423,9 +429,13 @@ try {
 
     const mainMetrics = (await app3.eval(`(() => ({
       ok: document.documentElement.scrollHeight - window.innerHeight <= 2 && document.documentElement.scrollWidth <= window.innerWidth + 2,
+      mapVisible: (() => {
+        const rect = document.querySelector('[data-e2e="campus-map-image"]')?.getBoundingClientRect();
+        return Boolean(rect && rect.height >= 280 && rect.width >= 600 && rect.top >= -2 && rect.top < window.innerHeight - 160);
+      })(),
       textLength: document.body.innerText.length,
     }))()`)).result.result.value;
-    if (mainMetrics.ok && mainMetrics.textLength > 100) counters.mainFit += 1;
+    if (mainMetrics.ok && mainMetrics.mapVisible && mainMetrics.textLength > 100) counters.mainFit += 1;
     else failures.push(`round ${round}: App3 main fit failed ${JSON.stringify(mainMetrics)}`);
 
     if (round % 10 === 0) {

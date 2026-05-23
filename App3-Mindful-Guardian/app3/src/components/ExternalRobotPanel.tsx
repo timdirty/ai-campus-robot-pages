@@ -101,7 +101,7 @@ export const ExternalRobotPanel = memo(function ExternalRobotPanel() {
     if (busy) return;
     setBusy(cmd);
     const ok = await sendCmd(hw, cmd);
-    setLastResult(ok ? `✓ ${cmd}` : `✗ ${cmd} 失敗`);
+    setLastResult(ok ? `✓ ${cmd}` : `本機演示 ${cmd}`);
     setBusy(null);
   };
 
@@ -126,6 +126,7 @@ export const ExternalRobotPanel = memo(function ExternalRobotPanel() {
             {hw === 'ev3' ? 'LEGO EV3' : 'LEGO SPIKE Prime'}
             {isSimulated && <span className="ml-1.5 text-[10px] text-amber-600 font-mono">[SIM]</span>}
             {isConnected && !isSimulated && <span className="ml-1.5 text-[10px] text-emerald-600 font-mono">[連線中]</span>}
+            {!isConnected && <span className="ml-1.5 text-[10px] text-amber-600 font-mono">[本機演示]</span>}
           </p>
         </div>
         {expanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
@@ -154,11 +155,11 @@ export const ExternalRobotPanel = memo(function ExternalRobotPanel() {
 
           {/* Status bar */}
           <div className="flex items-center gap-2 rounded-xl bg-white p-2.5 ring-1 ring-slate-200">
-            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-400'}`} />
             <span className="text-xs font-bold text-slate-500 flex-1">
               {isConnected
                 ? isSimulated ? '模擬模式（可送指令）' : `已連線 ${status?.activePath ?? ''}`
-                : '未偵測到硬體'}
+                : '未偵測到硬體，已切換本機演示指令'}
             </span>
             <span className="text-[10px] font-mono text-slate-400 truncate max-w-[100px]">{lastResult}</span>
           </div>
@@ -173,7 +174,7 @@ export const ExternalRobotPanel = memo(function ExternalRobotPanel() {
                 <button
                   key={cmd}
                   type="button"
-                  disabled={!isConnected || !!busy}
+                  disabled={!!busy}
                   onClick={() => handleCmd(cmd)}
                   className={`flex flex-col items-center gap-0.5 rounded-xl py-2.5 text-center transition active:scale-95 disabled:opacity-40 ${
                     isAlert
@@ -197,7 +198,7 @@ export const ExternalRobotPanel = memo(function ExternalRobotPanel() {
             <span className="flex items-center gap-1"><Navigation2 className="h-3 w-3" />方向控制</span>
             <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />前往區域</span>
             <span className="flex items-center gap-1"><Siren className="h-3 w-3" />緊急警報</span>
-            <span className="flex items-center gap-1"><TriangleAlert className="h-3 w-3 text-amber-500" />硬體未接時不可用</span>
+            <span className="flex items-center gap-1"><TriangleAlert className="h-3 w-3 text-amber-500" />未接硬體也可本機演示</span>
           </div>
         </div>
       )}

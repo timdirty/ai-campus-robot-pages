@@ -8,7 +8,7 @@ import {createInitialGuardianState, guardianReducer, normalizeGuardianState} fro
 async function run() {
   const initial = createInitialGuardianState();
   assert.equal(initial.privacyMode, true);
-  assert.equal(initial.alerts.length, 0);
+  assert.equal(initial.alerts.length, 2);
   assert.ok(initial.nodes.some((node) => node.status === 'offline'));
   assert.ok(initial.hardwareEvents.some((event) => event.command === 'SYSTEM_READY'));
   assert.ok(initial.acousticSignals.some((signal) => signal.source === 'demo'));

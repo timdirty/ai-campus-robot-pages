@@ -87,7 +87,7 @@ async function doPost(command: string, source: string, timeoutMs: number): Promi
     return {
       ok: true,
       statusCode: 299,
-      message: `Showcase command recorded: ${command} from ${source}.`,
+      message: `展示指令已記錄：${command}（來源 ${source}）`,
       simulated: true,
     };
   }
@@ -140,7 +140,7 @@ export async function queryHardwareCommand(command: string, source: string, time
     return {
       ok: true,
       statusCode: 299,
-      message: `Showcase query recorded: ${command} from ${source}.`,
+      message: `展示查詢已記錄：${command}（來源 ${source}）`,
       response: 'SIMULATED_OK',
       simulated: true,
     };

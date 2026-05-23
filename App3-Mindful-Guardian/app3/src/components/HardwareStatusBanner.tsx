@@ -59,7 +59,7 @@ export const HardwareStatusBanner = memo(function HardwareStatusBanner({status}:
   }
 
   const bg = connected ? '#0f766e' : '#334155';
-  const text = connected ? '展示備援模式 · 未連接實體 Arduino，AI 判讀與派遣閉環仍可完整展示' : '本機展示模式 · 未連接實體 Arduino，Demo 感測器、AI 備援與派遣閉環仍可完整展示';
+  const text = connected ? '展示備援模式 · 未連接實體 Arduino，AI 判讀與派遣流程仍可完整展示' : '本機展示模式 · 未連接實體 Arduino，Demo 感測器、AI 備援與派遣流程仍可完整展示';
 
   return (
     <div role="status" aria-live="polite" style={{...BANNER_BASE, backgroundColor: bg}}>

@@ -18,7 +18,7 @@ const viewports = [
 ];
 
 const routes = [
-  { hash: 'life', expected: ['放學降雨預警', '智慧廣播控制', '今日鐘聲時程'] },
+  { hash: 'life', expected: ['放學降雨預警', '智慧廣播控制', '生活安全中樞'] },
   { hash: 'teach', expected: ['出缺席場域評估', '學習警示與氛圍分析', '影片辨識'] },
   { hash: 'delivery', expected: ['學生 / 教職員取件', '校園服務機 R-01', '即時配送狀態'] },
 ];

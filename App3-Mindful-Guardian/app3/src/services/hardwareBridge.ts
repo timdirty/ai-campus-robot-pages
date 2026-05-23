@@ -284,7 +284,7 @@ export async function assignDrivePort(portPath: string | null): Promise<{ok: boo
 }
 
 export async function testDriveMotor(): Promise<{ok: boolean; message: string}> {
-  if (STATIC_DEMO) return {ok: true, message: '線上練習模式：底盤馬達測試已模擬完成'};
+  if (STATIC_DEMO) return {ok: true, message: '線上練習模式：底盤馬達校驗已完成'};
   const {signal, clear} = withTimeout(7000);
   try {
     const response = await fetch(`${BRIDGE_URL}/api/drive/test`, {
@@ -294,12 +294,12 @@ export async function testDriveMotor(): Promise<{ok: boolean; message: string}> 
     const payload = await response.json().catch(() => ({}));
     return {
       ok: response.ok,
-      message: payload.response || payload.error || (response.ok ? '底盤馬達測試已送出' : `HTTP ${response.status}`),
+      message: payload.response || payload.error || (response.ok ? '底盤馬達校驗已送出' : `HTTP ${response.status}`),
     };
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error && error.name === 'AbortError' ? '底盤測試逾時' : error instanceof Error ? error.message : '無法連接本機硬體服務',
+      message: error instanceof Error && error.name === 'AbortError' ? '底盤校驗逾時' : error instanceof Error ? error.message : '無法連接本機硬體服務',
     };
   } finally {
     clear();
@@ -340,7 +340,7 @@ export async function testSensorLed(portPath: string): Promise<{ok: boolean; mes
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error && error.name === 'AbortError' ? '感測器測試逾時' : error instanceof Error ? error.message : '無法連接本機硬體服務',
+      message: error instanceof Error && error.name === 'AbortError' ? '感測器校驗逾時' : error instanceof Error ? error.message : '無法連接本機硬體服務',
     };
   } finally {
     clear();
@@ -604,7 +604,7 @@ export async function fetchZoneInsight(payload: ZoneInsightRequest): Promise<Zon
       confidence: null,
       summary: statusOnly ? '' : '本機 AI 備援已接手，請先依目前燈號與現場巡查結果處理。',
       situations: statusOnly ? [] : ['雲端 AI 或橋接服務暫時沒有回應，前端已切換本機備援流程。'],
-      suggestions: statusOnly ? [] : ['先完成現場確認與派遣閉環；網路恢復後可再重新判讀。'],
+      suggestions: statusOnly ? [] : ['先完成現場確認與派遣流程；網路恢復後可再重新判讀。'],
       error: error instanceof Error ? error.message : String(error),
     };
   } finally {

@@ -185,7 +185,7 @@ async function run() {
 
   const marked = appReducer(ordered, {
     type: 'MARK_HARDWARE_COMMAND',
-    payload: {id: ordered.robotCommandLogs[0].id, ok: false, message: 'No Arduino-like serial port found'},
+    payload: {id: ordered.robotCommandLogs[0].id, ok: false, message: '未偵測到 Arduino 序列埠，已切換離線展示模式'},
   });
   assert.equal(marked.robotCommandLogs[0].status, 'failed');
   assert.equal(marked.logs[0].type, 'warn');

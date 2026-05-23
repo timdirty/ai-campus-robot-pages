@@ -792,35 +792,35 @@ app.get('/api/sensors/live', async (_req, res) => {
 app.post('/api/robot/command', async (req, res) => {
   const {command, source} = req.body ?? {};
   if (typeof command !== 'string' || !command.trim()) {
-    return res.status(400).json({error: 'command required'});
+    return res.status(400).json({error: '缺少機器人指令'});
   }
   const normalized = command.trim().toUpperCase();
   const result = await sendCommand(normalized);
   res.status(result.ok ? 200 : 503).json({
     ok: result.ok,
-    response: result.ok ? `Sent ${normalized}` : undefined,
+    response: result.ok ? `已送出 ${normalized}` : undefined,
     error: result.ok ? undefined : result.message,
     source: typeof source === 'string' ? source : undefined,
   });
-  broadcast({type: 'command_ack', command: normalized, ok: result.ok, response: result.ok ? `Sent ${normalized}` : result.message});
+  broadcast({type: 'command_ack', command: normalized, ok: result.ok, response: result.ok ? `已送出 ${normalized}` : result.message});
 });
 
 app.post('/api/robot/drive', async (req, res) => {
   const {command} = req.body ?? {};
   if (typeof command !== 'string' || !command.trim()) {
-    return res.status(400).json({error: 'command required'});
+    return res.status(400).json({error: '缺少底盤指令'});
   }
   const normalized = command.trim().toUpperCase();
   if (!/^(FORWARD|BACKWARD|LEFT|RIGHT|STOP|HEARTBEAT|PATROL_START|ROBOT_RESUME|ROBOT_PAUSE|SPEED:\d+)$/.test(normalized)) {
-    return res.status(400).json({error: `unsupported drive command: ${normalized}`});
+    return res.status(400).json({error: `不支援的底盤指令：${normalized}`});
   }
   const result = await sendDriveCommand(normalized);
   res.status(result.ok ? 200 : 503).json({
     ok: result.ok,
-    response: result.ok ? `Drive ${normalized}` : undefined,
+    response: result.ok ? `底盤已執行 ${normalized}` : undefined,
     error: result.ok ? undefined : result.message,
   });
-  broadcast({type: 'command_ack', command: normalized, ok: result.ok, response: result.ok ? `Drive ${normalized}` : result.message});
+  broadcast({type: 'command_ack', command: normalized, ok: result.ok, response: result.ok ? `底盤已執行 ${normalized}` : result.message});
 });
 
 app.get('/api/ready', (_req, res) => {
@@ -925,7 +925,7 @@ app.post('/api/ops/reset', async (_req, res) => {
 app.get('/api/ev3/status', (_req, res) => res.json(getEV3Status()));
 app.post('/api/ev3/command', async (req, res) => {
   const command = String(req.body?.command ?? '').trim().toUpperCase();
-  if (!command) { res.status(400).json({ok: false, error: 'command required'}); return; }
+  if (!command) { res.status(400).json({ok: false, error: '缺少 EV3 指令'}); return; }
   const result = await sendEV3Command(command);
   res.json(result);
 });
@@ -934,7 +934,7 @@ app.post('/api/ev3/command', async (req, res) => {
 app.get('/api/spike/status', (_req, res) => res.json(getSpikeStatus()));
 app.post('/api/spike/command', async (req, res) => {
   const command = String(req.body?.command ?? '').trim().toUpperCase();
-  if (!command) { res.status(400).json({ok: false, error: 'command required'}); return; }
+  if (!command) { res.status(400).json({ok: false, error: '缺少 SPIKE 指令'}); return; }
   const result = await sendSpikeCommand(command);
   res.json(result);
 });
