@@ -48,7 +48,7 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 18px;
     }
     .card {
@@ -108,9 +108,20 @@
     <header>
       <p class="eyebrow">GITHUB PAGES DEMO</p>
       <h1>AI &#26657;&#22290;&#27231;&#22120;&#20154;&#23637;&#31034;&#20837;&#21475;</h1>
-      <p>App2 &#33287; App3 &#37117;&#21487;&#22312;&#27794;&#26377; Arduino&#12289;EV3&#12289;SPIKE &#25110;&#26412;&#27231;&#27211;&#25509;&#20282;&#26381;&#22120;&#26178;&#23436;&#25972;&#28436;&#32244;&#65307;&#30828;&#39636;&#25351;&#20196;&#26371;&#22238;&#21040;&#26412;&#27231;&#23637;&#31034;&#27969;&#31243;&#65292;QR code &#26371;&#36899;&#21040;&#23565;&#25033; Robot Display&#12290;</p>
+      <p>App1、App2 與 App3 都可在線上練習模式完整操作；需要真實 Arduino / EV3 / SPIKE 控制時，請改用各 App 的本機一鍵啟動。</p>
     </header>
     <section class="grid">
+    <article class="card">
+      <div>
+        <p class="eyebrow">APP1 ONLINE DEMO</p>
+        <h2>App1 國小 AI 白板助教</h2>
+        <p>拍白板、AI 文字整理、老師決策、紀錄本、小老師與學習單都已放上 Pages。線上版會以瀏覽器展示流程為主；真板控制請用本機 App1 bridge。</p>
+      </div>
+      <div class="actions">
+        <a class="primary" href="app1/">開啟 App1</a>
+      </div>
+    </article>
+
     <article class="card">
       <div>
         <p class="eyebrow">APP2 ONLINE DEMO</p>
